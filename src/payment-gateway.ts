@@ -2,12 +2,16 @@ export interface PaymentGateway {
   process(token: string): Promise<void>;
 }
 
-abstract class PaymentGatewayChain implements PaymentGateway {
-  constructor(public next?: PaymentGatewayChain) {}
+export abstract class PaymentGatewayChain implements PaymentGateway {
+  private next?: PaymentGatewayChain;
 
-  async process(token: string): Promise<void> {
+  public constructor(next?: PaymentGatewayChain) {
+    this.next = next;
+  }
+
+  public async process(token: string): Promise<void> {
     try {
-      await this.imp(token);
+      await this.execute(token);
     } catch {
       if (this.next) {
         await this.next.process(token);
@@ -17,22 +21,5 @@ abstract class PaymentGatewayChain implements PaymentGateway {
     }
   }
 
-  abstract imp(token: string): Promise<void>;
+  abstract execute(token: string): Promise<void>;
 }
-
-class Fake1PaymentGateway extends PaymentGatewayChain {
-  async imp(token: string): Promise<void> {
-    if (Math.random() > 0.5) throw new Error();
-    console.log("FAKE 1 PAYEMENT-GATEWAY " + token);
-  }
-}
-
-class Fake2PaymentGateway extends PaymentGatewayChain {
-  async imp(token: string): Promise<void> {
-    if (Math.random() > 0.5) throw new Error();
-    console.log("FAKE 2 PAYEMENT-GATEWAY " + token);
-  }
-}
-
-const fake2PaymentGateway = new Fake2PaymentGateway();
-export const paymentChain = new Fake1PaymentGateway(fake2PaymentGateway);
